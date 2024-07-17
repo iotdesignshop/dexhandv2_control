@@ -41,6 +41,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ServoDynamicsTable.msg"
   "msg/ServoTarget.msg"
   "msg/ServoTargetsTable.msg"
+  "msg/ServoTargetN.msg"
+  "msg/ServoTargetsNTable.msg"
   "srv/Reset.srv"
   DEPENDENCIES std_msgs
 )

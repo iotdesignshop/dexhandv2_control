@@ -60,7 +60,7 @@ class DexHandBase : public rclcpp::Node
         /// @brief This method must be called from a derived class at initialization time
         /// in order to populate the hands vector with instances of DexHand devices. 
         /// @note The factory parameter allows the derived class to pass through it's own
-        /// container objects.
+        /// container objects for storing additional state.
         void enumerate_devices(HandInstanceFactory factory);
         
     private:
