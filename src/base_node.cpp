@@ -16,7 +16,6 @@ DexHandBase::DexHandBase(const std::string& node_name) : Node(node_name) {
     // Create a publisher for discovered hands
     auto qos_profile = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
     dh_publisher = this->create_publisher<dexhandv2_control::msg::DiscoveredHands>("dexhandv2/discovered_hands", qos_profile);
-
 }
 
 DexHandBase::~DexHandBase() {

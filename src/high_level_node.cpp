@@ -4,9 +4,12 @@
 #include <string>
 #include "base_node.hpp"
 #include "dexhand_servomgr.hpp"
+#include "dexhand_joint_angle_controller.hpp"
 
 #include "dexhandv2_control/msg/servo_targets_table.hpp"
 #include "dexhandv2_control/msg/servo_targets_n_table.hpp"
+
+#include "sensor_msgs/msg/joint_state.hpp"
 
 using namespace dexhand_connect;
 using namespace std;
@@ -14,6 +17,9 @@ using namespace std;
 class HighLevelControlNode : public DexHandBase {
     public:
         HighLevelControlNode() : DexHandBase("dexhandv2_hlc") {
+
+            // Create parameter to disable joint angle control
+            this->declare_parameter<bool>("enable_joint_state_control", true);
 
             // Create subscribers for servo position messages
             st_subscriber = this->create_subscription<dexhandv2_control::msg::ServoTargetsTable>(
@@ -23,6 +29,14 @@ class HighLevelControlNode : public DexHandBase {
             st_n_subscriber = this->create_subscription<dexhandv2_control::msg::ServoTargetsNTable>(
                 "dexhandv2/servo_targets_n", rclcpp::QoS(rclcpp::KeepLast(1)).reliable().durability_volatile(),
                 std::bind(&HighLevelControlNode::servo_targets_n_callback, this, std::placeholders::_1));
+
+            // Subscribe to joint_states topic if joint angle control is enabled
+            if (this->get_parameter("enable_joint_state_control").as_bool()) {
+                RCLCPP_INFO(this->get_logger(), "Joint state control enabled");
+                js_subscriber = this->create_subscription<sensor_msgs::msg::JointState>(
+                    "joint_states", rclcpp::QoS(rclcpp::KeepLast(1)).reliable().durability_volatile(),
+                    std::bind(&HighLevelControlNode::joint_state_callback, this, std::placeholders::_1));
+            }
 
 
             // Enumerate all the devices and create hand instances
@@ -35,6 +49,52 @@ class HighLevelControlNode : public DexHandBase {
         ~HighLevelControlNode() override {}
 
     private:
+
+        void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+            RCLCPP_INFO(this->get_logger(), "Received joint state message");
+
+            // We need to map ROS/URDF joint names to the joint names used by the hand SDK and set the joint
+            for (unsigned ji = 0; ji < msg->name.size(); ji++) {
+                string name = msg->name[ji];
+
+                bool isRightHand = name.find("R_") != string::npos;
+
+                // Skip DIP and roll joints
+                if (name.find("_DIP") != string::npos || name.find("_Roll") != string::npos) {
+                    continue;
+                }
+
+                // Remove the "R_" or "L_" prefix
+                string jointName = name.substr(2);
+
+                // Convert the name to lowercase
+                std::transform(jointName.begin(), jointName.end(), jointName.begin(), ::tolower);
+
+                // Look up the joint id in the hand SDK
+                std::shared_ptr<HLCHandInstance> firstHand = dynamic_pointer_cast<HLCHandInstance>(getHands()[0]);
+                JointAngleController::JointID jointid = firstHand->getJointAngleController().getJointID(jointName);
+
+                if (jointid == JointAngleController::NUM_JOINT_IDS) {
+                    RCLCPP_ERROR(this->get_logger(), "Joint %s not found in SDK", jointName.c_str());
+                    continue;
+                }
+
+                RCLCPP_DEBUG(this->get_logger(), "Mapped ROS Joint %s to SDK Joint %s", name.c_str(), jointName.c_str());
+                RCLCPP_DEBUG(this->get_logger(), "Setting joint %s (ID:%d) to position %f", jointName.c_str(), jointid, msg->position[ji]*180.0/M_PI);
+
+                // Set the joint angle
+                for (auto& hand : getHands()) {
+                    auto hlcHand = dynamic_pointer_cast<HLCHandInstance>(hand);
+                    
+                    // Only send messages with correct handedness
+                    if (hlcHand->getJointAngleController().isRightHand() == isRightHand) {
+                        hlcHand->getJointAngleController().setJointAngle(jointid, msg->position[ji]*180.0/M_PI);
+                    }
+                }
+
+                
+            }
+        }
 
         void servo_targets_callback(const dexhandv2_control::msg::ServoTargetsTable::SharedPtr msg) {
             for (auto& hand : getHands()) {
@@ -73,8 +133,9 @@ class HighLevelControlNode : public DexHandBase {
             const static int SM_TX_RATE = 100; // 100hz
             const static int SM_RX_RATE = 50; // 50hz
             
-            HLCHandInstance(string deviceID, rclcpp::Node* parent) : HandInstance(deviceID, parent), servoMgr(getHand()) {
+            HLCHandInstance(string deviceID, rclcpp::Node* parent) : HandInstance(deviceID, parent), servoMgr(getHand()), jac(servoMgr) {
                 servoMgr.start(SM_TX_RATE, SM_RX_RATE);
+                jac.start();
             }
 
             ~HLCHandInstance() {
@@ -82,15 +143,18 @@ class HighLevelControlNode : public DexHandBase {
             }
 
             inline ServoManager& getServoManager() { return servoMgr; }
+            inline JointAngleController& getJointAngleController() { return jac; }
 
         private:
 
             ServoManager servoMgr; 
+            JointAngleController jac;
             
     };
 
     rclcpp::Subscription<dexhandv2_control::msg::ServoTargetsTable>::SharedPtr st_subscriber;
     rclcpp::Subscription<dexhandv2_control::msg::ServoTargetsNTable>::SharedPtr st_n_subscriber;
+    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr js_subscriber;
 
 
 };

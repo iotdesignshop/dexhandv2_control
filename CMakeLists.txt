@@ -12,6 +12,7 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 # Set the path to the Dexhand Connect C++ SDK
@@ -45,6 +46,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ServoTargetsNTable.msg"
   "srv/Reset.srv"
   DEPENDENCIES std_msgs
+  DEPENDENCIES sensor_msgs
 )
 
 # Get the message type support target
@@ -74,6 +76,11 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+# Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
