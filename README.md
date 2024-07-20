@@ -15,7 +15,7 @@ The package offers two nodes, and mechanics for integrating with the DexHand V2 
 
 ### Virtual E-Stop and the DexHand Reset Function
 
-As is common to the native Python and C++ SDK's as well, the DexHand V2 hardware always boots into a safe mode in which it is e-stopped at the SDK level. In order to start the message exchange with the hand **a reset command must be issued**. While this can be a cause of confusion "Why isn't the hand moving?", it's really the only safe way to boot the hardware. We apologize if this catches you off guard a couple of times as you get used to controlling the DexHand. Eventually, it will be part of your routine.
+As is common to the native Python and C++ SDK's as well, the DexHand V2 hardware always boots into a safe mode in which it is e-stopped at the SDK level. In order to start the message exchange with the hand **a reset command must be issued**. Although this can be a cause of confusion: aka, "Why isn't the hand moving?" it's really the only safe way to boot the hardware. We apologize if this catches you off guard a couple of times as you get used to controlling the DexHand. Eventually, it will be part of your routine.
 
 **The DexHand always boots in virtual e-stop and will not move until a reset command is issued**
 
@@ -23,6 +23,59 @@ As is common to the native Python and C++ SDK's as well, the DexHand V2 hardware
 ## Common functions and Procedures Related to Both Native Messaging and High Level Control
 
 Some functions of the DexHand are common to both nodes provided by the package. They are related to the enumeration and control functions of the hand, such as the **reset function** noted above.
+
+
+### Services
+
+#### /dexhandv2/reset - Reset hand function
+
+Because no further processing will occur until the reset function is called, we cover it first. **Note: the DexHand hardware will not begin processing messages and commands until it is reset after boot.** This is a safety function so that the hand does not start to move unexpectedly without intentional control. Once the hand has been reset, it will publish and subscribe to a number of control and status messages which we discuss in the documentation below. 
+
+To reset a hand using the ROS 2 CLI, you can issue the following command:
+```
+ros2 service call /dexhandv2/reset dexhandv2_control/srv/Reset "{id: <DexHand Serial# ID>}"
+```
+Where the id is found from the **/dexhandv2/discovered_hands** topic (covered below), or from the documentation that came with your hand. 
+
+Once you call the service, you should see confirmation that the reset was successful as follows:
+```
+> ros2 service call /dexhandv2/reset dexhandv2_control/srv/Reset "{id: E6616408438E5D29}"
+
+requester: making request: dexhandv2_control.srv.Reset_Request(id='E6616408438E5D29')
+
+response:
+dexhandv2_control.srv.Reset_Response(success=True)
+```
+
+Once the hand has been reset, additional information about the hand will be available in the topics discussed below.
+
+
+### Publishers and Topics
+
+#### /dexhandv2/discovered_hands - Hand enumeration
+
+This topic is used to determine which DexHand devices have been discovered by the node. It's primary use case is to uncover the serial numbers of the hands connected to the machine (in case you don't already know them) as most subsequent commands use these ID's to refer to the different hands plugged into the PC when publishing or subscribing to messages. This is the only topic that publishes information prior to the **reset_hand** service call above. It can be useful if you don't know the ID of your DexHand device(s).
+
+If you run:
+```
+ros2 topic echo /dexhandv2/discovered_hands
+```
+
+You should see output similar to this:
+```
+hands:
+- id: E6616408438E5D29
+  port: /dev/ttyACM0
+  manufacturer: DexHand
+  product: DexHandV2-1C
+---
+```
+
+The _id:_ field indicates the serial number identifier of the device.
+
+
+
+
 
 
 
