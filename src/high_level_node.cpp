@@ -51,8 +51,6 @@ class HighLevelControlNode : public DexHandBase {
     private:
 
         void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
-            RCLCPP_INFO(this->get_logger(), "Received joint state message");
-
             // We need to map ROS/URDF joint names to the joint names used by the hand SDK and set the joint
             for (unsigned ji = 0; ji < msg->name.size(); ji++) {
                 string name = msg->name[ji];
