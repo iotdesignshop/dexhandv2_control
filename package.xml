@@ -11,7 +11,7 @@
 
   <build_depend>libudev-dev</build_depend>
   <build_depend>protobuf-compiler</build_depend>
-  <build_depend>libprotobuf-dev</build_depend>
+  <build_depend>protobuf-dev</build_depend>
   <build_depend>pkg-config</build_depend>
 
   <depend>rclcpp</depend>
