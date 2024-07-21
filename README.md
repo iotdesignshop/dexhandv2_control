@@ -20,7 +20,7 @@ As is common to the native Python and C++ SDK's as well, the DexHand V2 hardware
 **The DexHand always boots in virtual e-stop and will not move until a reset command is issued**
 
 
-## Global ROS 2 Services and Topics
+## Common ROS 2 Services and Topics
 
 Some functions of the DexHand are common to both nodes provided by the package. They are related to the enumeration and control functions of the hand, such as the **reset function** noted above.
 
