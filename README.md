@@ -92,6 +92,54 @@ minor: 2
 
 ```
 
+### Servo Variables Topic
+```/dexhandv2/servo_vars```
+
+This topic retrieves the servo variables table for all of the DexHand devices connected to the system. The servo variables for each servo consist of:
+- **servo_id**: The unique identifier of this servo on the serial bus
+- **hw_min**: The minimum range of servo travel, specified at a hardware level (consider this an absolute limit of travel)
+- **hw_max**: The maximum range of servo travel, specified at a hardware level (consider this an absolute limit of travel)
+- **sw_min**: The minimum range of servo travel, specified in the firmware (this is user tunable within hardware limits)
+- **sw_max**: The maximum range of servo travel, specified in the firmware (this is user tunable within hardware limits)
+- **home**: The default position of the servo. It will return to this position whenever reset is called on the hand
+- **max_load_pct**: The maximum load on the servo before protection mode is activated (in percentage of total torque)
+- **max_temp**: The maximum temperature of the servo (in degrees celsius) before protection mode is activated
+
+If you run:
+```ros2 topic echo /dexhandv2/servo_vars```
+
+You should see output similar to this:
+```
+$ ros2 topic echo /dexhandv2/servo_vars 
+id: E6616408438E5D29
+servo_table:
+- servo_id: 101
+  hw_min: 1500
+  hw_max: 3000
+  sw_min: 1577
+  sw_max: 2350
+  home: 1577
+  max_load_pct: 40
+  max_temp: 70
+- servo_id: 102
+  hw_min: 1200
+  hw_max: 3000
+  sw_min: 1372
+  sw_max: 2177
+  home: 1372
+  max_load_pct: 40
+  max_temp: 70
+- servo_id: 103
+  hw_min: 2250
+  hw_max: 3300
+  sw_min: 2250
+  sw_max: 2989
+  home: 2250
+  max_load_pct: 40
+  max_temp: 70
+...
+```
+
 
 
 
