@@ -71,7 +71,26 @@ hands:
 
 The _id:_ field indicates the serial number identifier of the device.
 
-### 
+### Firmware Version Topic
+```/dexhandv2/firmware_version```
+
+This topic is used to list the firmware version of DexHand devices connected to the system. 
+
+If you run:
+```
+ros2 topic echo /dexhandv2/firmware_version
+```
+
+You should see output similar to this:
+```
+$ros2 topic echo /dexhandv2/firmware_version 
+id: E6616408438E5D29
+version_name: DexHand RS485
+major: 0
+minor: 2
+---
+
+```
 
 
 
