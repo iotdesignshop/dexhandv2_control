@@ -20,14 +20,12 @@ As is common to the native Python and C++ SDK's as well, the DexHand V2 hardware
 **The DexHand always boots in virtual e-stop and will not move until a reset command is issued**
 
 
-## Common functions and Procedures Related to Both Native Messaging and High Level Control
+## Global ROS 2 Services and Topics
 
 Some functions of the DexHand are common to both nodes provided by the package. They are related to the enumeration and control functions of the hand, such as the **reset function** noted above.
 
 
-### Services
-
-#### Reset Hand
+### Reset Hand Service
 ```/dexhandv2/reset```
 
 Because no further processing will occur until the reset function is called, we cover it first. **Note: the DexHand hardware will not begin processing messages and commands until it is reset after boot.** This is a safety function so that the hand does not start to move unexpectedly without intentional control. Once the hand has been reset, it will publish and subscribe to a number of control and status messages which we discuss in the documentation below. 
@@ -51,12 +49,10 @@ dexhandv2_control.srv.Reset_Response(success=True)
 Once the hand has been reset, additional information about the hand will be available in the topics discussed below.
 
 
-### Publishers and Topics
-
-#### Hand Enumeration
+### Hand Enumeration Topic
 ```/dexhandv2/discovered_hands```
 
-This topic is used to determine which DexHand devices have been discovered by the node. It's primary use case is to uncover the serial numbers of the hands connected to the machine (in case you don't already know them) as most subsequent commands use these ID's to refer to the different hands plugged into the PC when publishing or subscribing to messages. This is the only topic that publishes information prior to the [reset_hand](#reset-hand) service call above. It can be useful if you don't know the ID of your DexHand device(s).
+This topic is used to determine which DexHand devices have been discovered by the node. It's primary use case is to uncover the serial numbers of the hands connected to the machine (in case you don't already know them) as most subsequent commands use these ID's to refer to the different hands plugged into the PC when publishing or subscribing to messages. This is the only topic that publishes information prior to the [reset_hand](#reset-hand-service) service call above. It can be useful if you don't know the ID of your DexHand device(s).
 
 If you run:
 ```
