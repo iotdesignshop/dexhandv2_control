@@ -11,20 +11,23 @@
 
 #include "servo_vars_subscriber.hpp"
 #include "firmware_version_subscriber.hpp"
+#include "dynamics_subscriber.hpp"
 
 
 /// @brief Container class for holding instances of DexHand devices discovered by the node
 class HandInstance {
 
     public:
-        HandInstance(std::string deviceID, rclcpp::Node* parent) : hand(), id(deviceID), servoVars(deviceID, parent), firmware(deviceID,parent) {
+        HandInstance(std::string deviceID, rclcpp::Node* parent) : hand(), id(deviceID), servoVars(deviceID, parent), dynamics(deviceID, parent), firmware(deviceID,parent) {
             hand.subscribe(&servoVars);
             hand.subscribe(&firmware);
+            hand.subscribe(&dynamics);
         }
 
         virtual ~HandInstance() {
             hand.unsubscribe(&servoVars);
             hand.unsubscribe(&firmware);
+            hand.unsubscribe(&dynamics);
         }
 
         inline dexhand_connect::DexhandConnect& getHand() { return hand; }
@@ -36,6 +39,7 @@ class HandInstance {
         dexhand_connect::DexhandConnect hand;
         std::string id;
         ServoVarsSubscriber servoVars;
+        DynamicsSubscriber dynamics;
         FirmwareVersionSubscriber firmware;
 };
 using HandInstanceFactory = std::function<std::shared_ptr<HandInstance>(std::string, rclcpp::Node*)>;

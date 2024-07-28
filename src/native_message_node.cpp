@@ -6,8 +6,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "dexhandv2_control/msg/servo_dynamics.hpp"
-#include "dexhandv2_control/msg/servo_dynamics_table.hpp"
 #include "dexhandv2_control/msg/servo_status.hpp"
 #include "dexhandv2_control/msg/servo_target.hpp"
 #include "dexhandv2_control/msg/servo_targets_table.hpp"
@@ -63,46 +61,6 @@ class FullServoStatusSubscriber : public IDexhandMessageSubscriber<ServoFullStat
         rclcpp::Publisher<dexhandv2_control::msg::ServoStatus>::SharedPtr ss_publisher;
 };
 
-class DynamicsSubscriber : public IDexhandMessageSubscriber<ServoDynamicsMessage> {
-    public:
-        DynamicsSubscriber(string deviceID, rclcpp::Node* parent) : deviceID(deviceID), logger(parent->get_logger()){
-            // Define QoS policy - best effort, keep last message, volatile
-            auto qos = rclcpp::QoS(rclcpp::KeepLast(1));
-            qos.best_effort();
-
-            sd_publisher = parent->create_publisher<dexhandv2_control::msg::ServoDynamicsTable>("dexhandv2/servo_dynamics", qos);
-        }
-        ~DynamicsSubscriber() = default;
-
-        void messageReceived(const ServoDynamicsMessage& message) override {
-            RCLCPP_DEBUG(logger, "Dynamics message received for device: %s", deviceID.c_str());
-            RCLCPP_DEBUG(logger, "Num servos: %ld", message.getNumServos());
-            RCLCPP_DEBUG(logger, "ID\tStatus\tPos\tSpd\tLoad");
-            RCLCPP_DEBUG(logger, "------------------------------------");
-            
-
-            dexhandv2_control::msg::ServoDynamicsTable sd_msg;
-            sd_msg.id = deviceID;
-
-            for (const auto& status : message.getServoStatus()){
-                RCLCPP_DEBUG(logger, "%d\t%d\t%d\t%d\t%d", (int)status.first, status.second.getStatus(), status.second.getPosition(), status.second.getSpeed(), status.second.getLoad());
-                
-                dexhandv2_control::msg::ServoDynamics sd;
-                sd.servo_id = status.first;
-                sd.status = status.second.getStatus();
-                sd.position = status.second.getPosition();
-                sd.speed = status.second.getSpeed();
-                sd.load = status.second.getLoad();
-                sd_msg.servo_table.push_back(sd);
-            }
-            
-            sd_publisher->publish(sd_msg);
-        }
-    private:
-        string deviceID;
-        rclcpp::Logger logger;
-        rclcpp::Publisher<dexhandv2_control::msg::ServoDynamicsTable>::SharedPtr sd_publisher;
-};
 
 
 
@@ -153,20 +111,17 @@ class DexHandNode : public DexHandBase
     class NMHandInstance : public HandInstance {
 
         public:
-            NMHandInstance(string deviceID, rclcpp::Node* parent) : HandInstance(deviceID, parent), fullStatus(deviceID, parent), dynamics(deviceID, parent) {
+            NMHandInstance(string deviceID, rclcpp::Node* parent) : HandInstance(deviceID, parent), fullStatus(deviceID, parent) {
                 getHand().subscribe(&fullStatus);
-                getHand().subscribe(&dynamics);
             }
 
             ~NMHandInstance() {
                 getHand().unsubscribe(&fullStatus);
-                getHand().unsubscribe(&dynamics);
             }
 
         private:
 
             FullServoStatusSubscriber fullStatus;
-            DynamicsSubscriber dynamics;
             
     };
 
