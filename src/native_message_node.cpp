@@ -51,7 +51,6 @@ class FullServoStatusSubscriber : public IDexhandMessageSubscriber<ServoFullStat
             ss_msg.servo_id = message.getServoID();
             ss_msg.status = message.getStatus();
             ss_msg.position = message.getPosition();
-            ss_msg.speed = message.getSpeed();
             ss_msg.load = message.getLoad();
             ss_msg.voltage = message.getVoltage();
             ss_msg.temp = message.getTemperature();

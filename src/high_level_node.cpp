@@ -8,6 +8,7 @@
 
 #include "dexhandv2_control/msg/servo_targets_table.hpp"
 #include "dexhandv2_control/msg/servo_targets_n_table.hpp"
+#include "dexhandv2_control/msg/servo_status_table.hpp"
 
 #include "sensor_msgs/msg/joint_state.hpp"
 
@@ -37,6 +38,37 @@ class HighLevelControlNode : public DexHandBase {
                     "joint_states", rclcpp::QoS(rclcpp::KeepLast(1)).reliable().durability_volatile(),
                     std::bind(&HighLevelControlNode::joint_state_callback, this, std::placeholders::_1));
             }
+
+            // Create publisher for servo status messages
+            servo_status_publisher = this->create_publisher<dexhandv2_control::msg::ServoStatusTable>(
+                "dexhandv2/servo_status", rclcpp::QoS(rclcpp::KeepLast(1)).reliable().durability_volatile());
+            
+            // Create timer for publishing servo status messages on 1 sec interval
+            servo_status_timer = this->create_wall_timer(1s, [this]() {
+                
+                dexhandv2_control::msg::ServoStatusTable msg;
+                for (auto& hand : getHands()) {
+                    msg.id = hand->getID();
+                    auto hlcHand = dynamic_pointer_cast<HLCHandInstance>(hand);
+
+                    // Make sure hand is running
+                    if (hlcHand->getServoManager().isReady() == false) {
+                        continue;
+                    }
+
+                    for (auto& servo : hlcHand->getServoManager().getServos()) {
+                        dexhandv2_control::msg::ServoStatus sd;
+                        sd.servo_id = servo.second->getID();
+                        sd.status = servo.second->getStatus();
+                        sd.position = servo.second->getPosition();
+                        sd.load = servo.second->getLoad();
+                        sd.voltage = servo.second->getVoltage();
+                        sd.temp = servo.second->getTemperature();
+                        msg.servo_table.push_back(sd);
+                    }
+                }
+                servo_status_publisher->publish(msg);
+            });
 
 
             // Enumerate all the devices and create hand instances
@@ -154,6 +186,9 @@ class HighLevelControlNode : public DexHandBase {
     rclcpp::Subscription<dexhandv2_control::msg::ServoTargetsNTable>::SharedPtr st_n_subscriber;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr js_subscriber;
 
+    rclcpp::Publisher<dexhandv2_control::msg::ServoStatusTable>::SharedPtr servo_status_publisher;
+    rclcpp::TimerBase::SharedPtr servo_status_timer;
+    
 
 };
 
